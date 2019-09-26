@@ -1,6 +1,7 @@
 /**
  * Resources:
- * https://www.valentinog.com/blog/memory-usage-node-js/
+ * process.memoryUsage: https://www.valentinog.com/blog/memory-usage-node-js/
+ * process.hrtime: https://nodejs.org/api/process.html#process_process_hrtime_time
  */
 
 require('console.table')
@@ -40,13 +41,13 @@ const arraysPayload = JSON.stringify(listOfArrays)
  * -----------------------------------------------------------
  */	
 
-executeAndLogPerformance(
+runProfiling(
 	'Parse Objects first, then Arrays',
 	measuredPerformance('Parse Objects', () => JSON.parse(objectsPayload)),
 	measuredPerformance('Parse Arrays', () => JSON.parse(arraysPayload))
 )
 
-executeAndLogPerformance(
+runProfiling(
 	'Parse Arrays first, then Objects',
 	measuredPerformance('Parse Arrays', () => JSON.parse(arraysPayload)),
 	measuredPerformance('Parse Objects', () => JSON.parse(objectsPayload))
@@ -68,9 +69,9 @@ function measuredPerformance(name, action) {
 	}
 }
 
-function executeAndLogPerformance(label, ...performanceExecutions) {
+function runProfiling(label, ...executions) {
 	const results = []
-	for (const execution of performanceExecutions) {
+	for (const execution of executions) {
  		// collect garbage before each execution so that
  		// we get more accurate metrics
 		tryCollectGarbage()
@@ -89,16 +90,16 @@ function tryCollectGarbage() {
 			throw Error()
 		}
 	} catch(ex) {
-		throw Error('Script must be run with --expose-gc: `node --expose-gc index.js`')
+		throw Error('Script must be run with `--expose-gc` flag: `node --expose-gc index.js`')
 	}
 }
 
 function getFormattedMemoryUsage() {
 	// we only care about heapTotal and heapUsed
-	const { rss, external, ...memoryUsage } = process.memoryUsage()
+	const { rss, external, ...usage } = process.memoryUsage()
 	const usageFormatted = {}
-	for (const key in memoryUsage) {
-		usageFormatted[key] = `${Math.round(memoryUsage[key] / 1024 / 1024 * 100) / 100} MB`
+	for (const key in usage) {
+		usageFormatted[key] = `${Math.round(usage[key] / 1024 / 1024 * 100) / 100} MB`
 	}
 	return usageFormatted
 }
